@@ -1,0 +1,101 @@
+import numpy as np
+import sympy as sp
+
+## --- Geometric Parameters ---
+# all in meters [m]
+
+'''
+       SPACECRAFT DIAGRAM
+                                 panel
+                            __________________
+                            \                 \
+    cylinder          l      \                 \  
+________________ _____________\_________        \  c
+|              |      rod      \                 \
+|              |                \_________________\
+|              |                         b
+|              |
+|      +       |  h
+|    origin    |
+|              |
+|              | 
+|______________|
+     d = 2r 
+
+'''
+
+# Cylinder
+r = 0.5 # radius
+h = 2 # height
+d = 100 #g/m^3
+
+# Panel
+b = 2 # length
+c = 0.5 # width
+t_deg = 87 # theta
+t = np.deg2rad(t_deg)
+
+# Rod
+l = 2 # length
+
+
+# Physical Parameters
+
+g = 9.8 # acceleration due to gravity
+
+# Masses and Distances
+m = np.array([d * np.pi * 0.5**2 * 2, 1, 4]) # mass matrix
+d_1 = np.array([0, 0, 0]) # distance matrix in b_1 direction
+d_2 = np.array([0, 1.5, 2.5]) # distance matrix in b_2 direction
+d_3 = np.array([0, 1, 1]) # distance matrix in b_2 direction
+
+
+# Inertia Matrices
+
+I_cyl = (m[0] / 12) * np.diag([3 * r**2 + h**2, 3 * r**2 + h**2, 6 * r**2]) # cylinder
+I_rod = m[1] * np.diag([2**2 * (1/12), 0, 2**2 * (1/12)]) # rod
+I_pan = m[2] * np.diag([(b**2 + c**2) / 12, c**2 / 12, b**2 / 12]) # panel
+
+## Functions
+# Skew Symmetric Function
+def skew(a):
+    s = np.array([[0, -a[2], a[1]],
+                  [a[2], 0, -a[0]],
+                  [-a[1], a[0], 0]])
+    return s
+
+## Parallel Axis Theorem (PAT)
+def pat(I_n, m, r_co):
+    I = I_n - m * skew(r_co) @ skew(r_co)
+    return I
+
+
+
+## --- 2a.) Center of Mass Calculation ---
+
+cm_1 = np.dot(m, d_1) / sum(m) # b_1 direction
+cm_2 = np.dot(m, d_2) / sum(m) # b_2 direction
+cm_3 = np.dot(m, d_3) / sum(m) # b_3 direction
+b_cm = (cm_1, cm_2, cm_3) # center of mass vector
+print(f'The center of mass wrt to the b frame is: {b_cm}m')
+
+
+## --- 2b.) Moment of Interia ---
+
+# Rotation Matrix for the Panel from its principle axis so that it is parallel to the b frame
+R_bc_pan = np.array([[np.cos(t), 0, -np.sin(t)], [0, 1, 0], [np.sin(t), 0, np.cos(t)]])
+
+# Panel Inertia Matrix in frame parallel to b frame
+I_pan = R_bc_pan @ I_pan @ R_bc_pan.T
+
+# PAT for panel
+r_oc_pan = np.array([0, r + l, h / 2])
+I_pan_b = pat(I_pan, m[2], r_oc_pan)
+
+# PAT for rod
+r_oc_rod = np.array([0, r + l / 2, h / 2])
+I_rod_b = pat(I_rod, m[1], r_oc_rod)
+
+# Composite Inertia Matrix for Spacecraft in the b Frame
+I_comp = I_rod_b + I_pan_b + I_cyl
+a=b
