@@ -1,5 +1,5 @@
 import numpy as np
-import sympy as sp
+
 
 ## --- Geometric Parameters ---
 # all in meters [m]
@@ -98,4 +98,3 @@ I_rod_b = pat(I_rod, m[1], r_oc_rod)
 
 # Composite Inertia Matrix for Spacecraft in the b Frame
 I_comp = I_rod_b + I_pan_b + I_cyl
-a=b
