@@ -20,16 +20,18 @@ ________________ _____________\_________        \  c
 |              |
 |              | 
 |______________|
-     d = 2r 
+       2r 
 
 '''
 
 # Cylinder
+
 r = 0.5 # radius
 h = 2 # height
 d = 100 #g/m^3
 
 # Panel
+
 b = 2 # length
 c = 0.5 # width
 t_deg = 87 # theta
@@ -44,6 +46,7 @@ l = 2 # length
 g = 9.8 # acceleration due to gravity
 
 # Masses and Distances
+
 m = np.array([d * np.pi * 0.5**2 * 2, 1, 4]) # mass matrix
 d_1 = np.array([0, 0, 0]) # distance matrix in b_1 direction
 d_2 = np.array([0, 1.5, 2.5]) # distance matrix in b_2 direction
@@ -55,6 +58,7 @@ d_3 = np.array([0, 1, 1]) # distance matrix in b_2 direction
 I_cyl = (m[0] / 12) * np.diag([3 * r**2 + h**2, 3 * r**2 + h**2, 6 * r**2]) # cylinder
 I_rod = m[1] * np.diag([2**2 * (1/12), 0, 2**2 * (1/12)]) # rod
 I_pan = m[2] * np.diag([(b**2 + c**2) / 12, c**2 / 12, b**2 / 12]) # panel
+
 
 ## Functions
 # Skew Symmetric Function
@@ -71,7 +75,7 @@ def pat(I_n, m, r_co):
 
 
 
-## --- 2a.) Center of Mass Calculation ---
+## --- 2a.) Center of Mass ---
 
 cm_1 = np.dot(m, d_1) / sum(m) # b_1 direction
 cm_2 = np.dot(m, d_2) / sum(m) # b_2 direction
@@ -89,12 +93,25 @@ R_bc_pan = np.array([[np.cos(t), 0, -np.sin(t)], [0, 1, 0], [np.sin(t), 0, np.co
 I_pan = R_bc_pan @ I_pan @ R_bc_pan.T
 
 # PAT for panel
-r_oc_pan = np.array([0, r + l, h / 2])
+r_oc_pan = -np.array([0, r + l, h / 2])
 I_pan_b = pat(I_pan, m[2], r_oc_pan)
 
 # PAT for rod
-r_oc_rod = np.array([0, r + l / 2, h / 2])
+r_oc_rod = -np.array([0, r + l / 2, h / 2])
+uu = skew(r_oc_rod) @ skew(r_oc_rod)
 I_rod_b = pat(I_rod, m[1], r_oc_rod)
 
 # Composite Inertia Matrix for Spacecraft in the b Frame
 I_comp = I_rod_b + I_pan_b + I_cyl
+
+
+## --- 2c.) First Moment of Inertia ---
+
+# First Moment of Inertia of the Composite Body about the b Frame
+c_comp_o = m[1] * -1 * r_oc_rod + m[2] * -1 * r_oc_pan
+
+# Center of Mass Location of the Composite Body in Respect to the b Frame
+r_oc = c_comp_o / np.sum(m)
+
+# PAT for Composite Body in respect to the Center of Mass
+I_comp_c = pat(I_comp, np.sum(m), r_oc)
